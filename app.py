@@ -290,9 +290,9 @@ def predict_tflite(interpreter, input_details, output_details, image):
     return output_data[0]
 
 # ==============================================
-# FUNGSI BUAT PDF HASIL
+# FUNGSI BUAT PDF HASIL (Revisi: confidence -> akurasi)
 # ==============================================
-def buat_pdf_hasil(nama_file, kelas, confidence, top3, deskripsi, kualitas="", warning=""):
+def buat_pdf_hasil(nama_file, kelas, akurasi, top3, deskripsi, kualitas="", warning=""):
     pdf = FPDF()
     pdf.add_page()
     pdf.set_font("Arial", size=16, style='B')
@@ -301,7 +301,7 @@ def buat_pdf_hasil(nama_file, kelas, confidence, top3, deskripsi, kualitas="", w
     pdf.set_font("Arial", size=12)
     pdf.cell(200, 10, txt=f"File: {nama_file}", ln=1)
     pdf.cell(200, 10, txt=f"Hasil Prediksi: {kelas}", ln=1)
-    pdf.cell(200, 10, txt=f"Confidence: {confidence:.2%}", ln=1)
+    pdf.cell(200, 10, txt=f"Akurasi Prediksi: {akurasi:.2%}", ln=1)  # Diubah dari confidence ke akurasi
     if kualitas:
         pdf.cell(200, 10, txt=f"Kualitas Gambar: {kualitas}", ln=1)
     if warning:
@@ -369,7 +369,7 @@ if interpreter is None:
 tab1, tab2, tab3, tab4 = st.tabs(["📸 Prediksi", "ℹ️ Info Model", "📖 Panduan", "🔍 Filter Konten"])
 
 # ==============================================
-# TAB 1: PREDIKSI
+# TAB 1: PREDIKSI (Revisi: confidence -> akurasi)
 # ==============================================
 with tab1:
     st.markdown("### 📤 Ambil Gambar")
@@ -442,27 +442,27 @@ with tab1:
                 predictions = predict_tflite(interpreter, input_details, output_details, enhanced_image)
                 pred_idx = int(np.argmax(predictions))
                 pred_class = class_names[pred_idx]
-                confidence = float(predictions[pred_idx])
+                akurasi = float(predictions[pred_idx])  # Diubah dari confidence ke akurasi
 
                 top_3_idx = np.argsort(predictions)[-3:][::-1]
                 top_3 = [(class_names[i], float(predictions[i])) for i in top_3_idx]
 
                 # Hasil
                 st.success("### Hasil Prediksi")
-                conf_color = "green" if confidence > 0.8 else "orange" if confidence > 0.6 else "red"
+                akurasi_color = "green" if akurasi > 0.8 else "orange" if akurasi > 0.6 else "red"  # Diubah dari conf_color
                 
                 warning_msg = ""
                 if is_non_megalith:
                     warning_msg = "Gambar terdeteksi non-batu, prediksi TIDAK AKURAT!"
                     st.error(f"⚠️ {warning_msg}")
-                elif confidence < 0.6:
-                    warning_msg = "Confidence rendah, prediksi mungkin kurang akurat"
+                elif akurasi < 0.6:  # Diubah dari confidence
+                    warning_msg = "Akurasi prediksi rendah, hasil mungkin kurang akurat"  # Diubah dari confidence
                     st.warning(f"⚠️ {warning_msg}")
                 
                 st.markdown(f"""
                 <div style="background: white; padding: 1.5rem; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); border-left: 4px solid #667eea;">
                     <h4>Kelas: <span style="color:#667eea;">{pred_class}</span></h4>
-                    <p>Confidence: <span style="color:{conf_color};">{confidence:.2%}</span></p>
+                    <p>Akurasi Prediksi: <span style="color:{akurasi_color};">{akurasi:.2%}</span></p>  <!-- Diubah dari confidence -->
                 </div>
                 """, unsafe_allow_html=True)
 
@@ -471,9 +471,9 @@ with tab1:
 
                 # Top 3
                 st.markdown("#### 🏆 Top 3")
-                for i, (cls, conf) in enumerate(top_3, 1):
+                for i, (cls, ak) in enumerate(top_3, 1):  # Diubah dari conf
                     emoji = "🥇" if i == 1 else "🥈" if i == 2 else "🥉"
-                    st.markdown(f"{emoji} **{i}. {cls}**: {conf:.2%}")
+                    st.markdown(f"{emoji} **{i}. {cls}**: {ak:.2%}")
 
                 # Grafik
                 st.markdown("#### 📊 Probabilitas")
@@ -484,11 +484,11 @@ with tab1:
                 }
                 st.bar_chart(chart_data, x="Kelas", y="Probabilitas", height=300)
 
-                # Download PDF
+                # Download PDF (Revisi: confidence -> akurasi)
                 pdf_bytes = buat_pdf_hasil(
                     gambar.name if hasattr(gambar, 'name') else "foto_kamera.jpg",
                     pred_class,
-                    confidence,
+                    akurasi,  # Diubah dari confidence
                     top_3,
                     DESKRIPSI_KELAS.get(pred_class, ""),
                     kualitas,
@@ -547,7 +547,7 @@ with tab3:
     1. **Pilih sumber gambar** (Upload file atau Kamera)
     2. **Ambil/upload gambar** batu megalitikum
     3. Klik tombol **Prediksi Sekarang**
-    4. Lihat hasil klasifikasi, confidence, dan deskripsi
+    4. Lihat hasil klasifikasi, akurasi prediksi, dan deskripsi  # Diubah dari confidence
     5. **Download laporan PDF** jika diperlukan
     """)
     
